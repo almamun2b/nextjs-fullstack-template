@@ -1,122 +1,96 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-sans) sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --color-error: var(--error);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+}
+
 :root {
-  color-scheme: light;
+  --background: oklch(0.962 0.006 84.6); /* #f4f2ee canvas */
+  --foreground: oklch(0.218 0 0); /* #1a1a1a */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.218 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.218 0 0);
+  --primary: oklch(0.516 0.163 254.7); /* #0a66c2 */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.954 0.017 250.8); /* #e8f1fb */
+  --secondary-foreground: oklch(0.38 0.124 254.7); /* #004182 */
+  --muted: oklch(0.931 0.006 84.6); /* #eae8e4 */
+  --muted-foreground: oklch(0.51 0 0); /* #666666 */
+  --accent: oklch(0.962 0.009 247.9); /* #eef3f8 */
+  --accent-foreground: oklch(0.218 0 0);
+
+  --border: oklch(0.904 0.004 91.4); /* #e0dfdc */
+  --input: oklch(0.617 0 0); /* #858585, 3:1+ on card, canvas, and muted */
+  --ring: oklch(0.516 0.163 254.7);
+
+  --destructive: oklch(0.536 0.213 27.7); /* #cc1016 */
+  --error: oklch(0.536 0.213 27.7);
+  --success: oklch(0.498 0.122 154.8); /* #057642 */
+  --warning: oklch(0.515 0.111 67.4); /* #915907 */
+  --danger: oklch(0.536 0.213 27.7);
 }
 
-* {
-  box-sizing: border-box;
+.dark {
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.925 0 0); /* #e6e6e6 */
+  --card: oklch(0.237 0.01 248.2); /* #1b1f23 */
+  --card-foreground: oklch(0.925 0 0);
+  --popover: oklch(0.281 0.015 244.2); /* #232a30, one step above card */
+  --popover-foreground: oklch(0.925 0 0);
+  --primary: oklch(0.761 0.121 249); /* #71b7fb */
+  --primary-foreground: oklch(0 0 0);
+  --secondary: oklch(0.318 0.059 255.8); /* #1d3350 */
+  --secondary-foreground: oklch(0.854 0.076 248.1); /* #a8d4ff */
+  --muted: oklch(0.308 0.017 244.8); /* #293138 */
+  --muted-foreground: oklch(0.715 0 0); /* #a3a3a3 */
+  --accent: oklch(0.308 0.017 244.8);
+  --accent-foreground: oklch(0.925 0 0);
+
+  --border: oklch(0.378 0.025 250.7); /* #38434f */
+  --input: oklch(0.612 0.022 250.5); /* #7a8591 */
+  --ring: oklch(0.761 0.121 249);
+
+  --destructive: oklch(0.704 0.191 22.216);
+  --error: oklch(0.704 0.191 22.216);
+  --success: oklch(0.685 0.145 136.8); /* #6dae4f */
+  --warning: oklch(0.764 0.139 73.2); /* #e7a33e */
+  --danger: oklch(0.769 0.118 36.4); /* #f5987e */
 }
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  background: #fff;
-  color: #111;
-}
-
-.shell {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 3rem 1.5rem;
-}
-
-.hero {
-  margin-bottom: 1.5rem;
-}
-
-.eyebrow {
-  margin: 0 0 0.5rem;
-  color: #666;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-h1 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.lede {
-  margin: 0.5rem 0 0;
-  color: #666;
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
-
-.panel {
-  border: 1px solid #e5e5e5;
-  border-radius: 0.5rem;
-  padding: 1rem;
-}
-
-.panelHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
-}
-
-h2 {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.panelHeader span,
-.empty,
-time {
-  color: #888;
-  font-size: 0.8rem;
-}
-
-.panel p {
-  color: #666;
-  font-size: 0.8rem;
-}
-
-.users {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.5rem;
-}
-
-.users li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.625rem 0.75rem;
-  border: 1px solid #eee;
-  border-radius: 0.375rem;
-}
-
-.users p {
-  margin: 0.125rem 0 0;
-}
-
-time {
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-code {
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.25rem;
-  background: #f5f5f5;
-  font-family: SFMono-Regular, Consolas, monospace;
-  font-size: 0.875em;
-}
-
-@media (max-width: 640px) {
-  .users li,
-  .panelHeader {
-    flex-direction: column;
-    align-items: flex-start;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  html {
+    @apply font-sans;
   }
 }

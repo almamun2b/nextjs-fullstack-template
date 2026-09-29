@@ -45,7 +45,5 @@ next-env.d.ts
 /src/generated
 
 # mcp / local agent config
-.mcp.json
-.vscode/mcp.json
 opencode.jsonc
 .claude/settings.local.json
