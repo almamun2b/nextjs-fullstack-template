@@ -71,7 +71,7 @@ When pnpm prompts about an install script from a new dependency, add the package
 - `src/lib/prisma.ts` **throws at import time** when `DATABASE_URL` is missing. That is why `src/app/page.tsx` dynamic-imports it and sets `force-dynamic`: to keep `next build` from failing without a DB. Keep DB access out of module scope in anything that is statically analysed.
 - The `@/*` path alias maps to the **repo root** (`@/src/lib/prisma`), not `src/`. Retargeting it to `./src/*` is on the roadmap. If you change it, update all imports in the same change.
 - `src/generated/` is gitignored and must never be edited by hand.
-- Tailwind v4 is installed but has no `postcss.config.mjs` yet, so utility classes don't compile, and `src/app/page.tsx` still uses scaffold classes that `globals.css` no longer defines. Because of that, **`pnpm build` currently fails** (`Can't resolve 'tw-animate-css'` from `globals.css`); `pnpm dev` still runs. See [DESIGN.md › Setup status](DESIGN.md#setup-status).
+- Tailwind v4 compiles through `postcss.config.mjs` (`@tailwindcss/postcss`). Without that file, Turbopack resolves the `@import`s in `globals.css` itself and fails on `tw-animate-css`, which only exports a `style` condition. `src/app/page.tsx` still uses scaffold classes that `globals.css` no longer defines, so it renders unstyled. See [DESIGN.md › Setup status](DESIGN.md#setup-status).
 - `next.config.ts` pins `turbopack.root` and `outputFileTracingRoot` to the project directory, because a stray `pnpm-workspace.yaml` in a parent directory otherwise makes Next.js guess the wrong root. Keep both set to the same path.
 
 ## Architecture rules (non-negotiable)
