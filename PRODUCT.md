@@ -15,7 +15,7 @@ Two audiences carry equal weight, and every shipped surface has to work for both
 
 ## Product Purpose
 
-A reusable, production-grade full-stack starter: Next.js 16 App Router + React 19.2 + Prisma 7 (PostgreSQL) with Auth.js v5 (NextAuth). It exists so a developer can start a real app with authentication, user management, SEO, accessibility, performance, and security already done properly, instead of rebuilding them each time.
+A reusable, production-grade full-stack starter: Next.js 16 App Router + React 19.3 + Prisma 7 (PostgreSQL) with Auth.js v5 (NextAuth). It exists so a developer can start a real app with authentication, user management, SEO, accessibility, performance, and security already done properly, instead of rebuilding them each time.
 
 Success means a developer can clone it, re-brand it, and ship, with the UI already meeting the accessibility, performance, and security bars without extra work.
 

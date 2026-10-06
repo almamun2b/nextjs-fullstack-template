@@ -17,7 +17,7 @@ A production-ready full-stack starter: **Next.js 16 · React 19 · Prisma 7 · P
 
 ## Quick start
 
-Requirements: Node.js 20+, pnpm 11, and a PostgreSQL server. Development uses a local PostgreSQL database.
+Requirements: Node.js 22.22.1+ (`.nvmrc` pins 24), pnpm 11, and a PostgreSQL server. Development uses a local PostgreSQL database.
 
 ```bash
 pnpm install

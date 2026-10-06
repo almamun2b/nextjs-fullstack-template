@@ -12,7 +12,7 @@ Instructions for AI coding agents (Claude Code, Codex, opencode, Cursor, …) wo
 
 ## Project in one paragraph
 
-This is a full-stack template: **Next.js 16 App Router + React 19.2 + Prisma 7 (PostgreSQL)**, with Auth.js v5 (`next-auth`) for authentication and our own user management on top, plus SEO, a11y, performance, and security baked in. The repo is currently close to the `create-prisma` scaffold. **ARCHITECTURE.md describes the target, and its "Implementation status" table says what actually exists.** Check that table before you import a planned module, and update it in the same change that implements something.
+This is a full-stack template: **Next.js 16 App Router + React 19.3 + Prisma 7 (PostgreSQL)**, with Auth.js v5 (`next-auth`) for authentication and our own user management on top, plus SEO, a11y, performance, and security baked in. The repo is currently close to the `create-prisma` scaffold. **ARCHITECTURE.md describes the target, and its "Implementation status" table says what actually exists.** Check that table before you import a planned module, and update it in the same change that implements something.
 
 ## This is not the Next.js or Prisma you remember
 
@@ -71,7 +71,8 @@ When pnpm prompts about an install script from a new dependency, add the package
 - `src/lib/prisma.ts` **throws at import time** when `DATABASE_URL` is missing. That is why `src/app/page.tsx` dynamic-imports it and sets `force-dynamic`: to keep `next build` from failing without a DB. Keep DB access out of module scope in anything that is statically analysed.
 - The `@/*` path alias maps to the **repo root** (`@/src/lib/prisma`), not `src/`. Retargeting it to `./src/*` is on the roadmap. If you change it, update all imports in the same change.
 - `src/generated/` is gitignored and must never be edited by hand.
-- Tailwind v4 is installed but has no `postcss.config.mjs` yet, so utility classes don't compile, and `src/app/page.tsx` still uses scaffold classes that `globals.css` no longer defines. See [DESIGN.md › Setup status](DESIGN.md#setup-status).
+- Tailwind v4 is installed but has no `postcss.config.mjs` yet, so utility classes don't compile, and `src/app/page.tsx` still uses scaffold classes that `globals.css` no longer defines. Because of that, **`pnpm build` currently fails** (`Can't resolve 'tw-animate-css'` from `globals.css`); `pnpm dev` still runs. See [DESIGN.md › Setup status](DESIGN.md#setup-status).
+- `next.config.ts` pins `turbopack.root` and `outputFileTracingRoot` to the project directory, because a stray `pnpm-workspace.yaml` in a parent directory otherwise makes Next.js guess the wrong root. Keep both set to the same path.
 
 ## Architecture rules (non-negotiable)
 
@@ -94,6 +95,22 @@ These are summarised from ARCHITECTURE.md §3–§11. Follow them even while the
 - Every async segment gets `loading.tsx` (layout-stable skeleton) and `error.tsx`. Mutations show pending, success, and error states, and destructive ones need confirmation.
 - List, filter, and pagination state lives in `searchParams`, so URLs are shareable and agent-navigable.
 - Images use `next/image` with `sizes`; fonts use `next/font`; third-party scripts use `next/script`. Respect `prefers-reduced-motion`.
+
+## Code size limits
+
+ESLint enforces these as errors, so `pnpm lint`, the pre-commit hook, and CI all fail on a violation. Blank lines and comments don't count.
+
+| Unit                                                                      | Max lines |
+| ------------------------------------------------------------------------- | --------- |
+| Component file (`*.tsx`)                                                  | 200       |
+| Any function: a component body, hook, Server Action, DAL function, helper | 150       |
+
+`src/components/ui/**` (generated shadcn primitives) and test files are exempt. Don't silence the rules with `eslint-disable`; split the code by responsibility instead:
+
+- **Big page or component:** extract sections into subcomponents. Pieces used by one route go in a private `_components/` folder beside it (the `_` keeps it out of routing); shared ones go in `src/components/`.
+- **Client logic:** move state and effects into a custom hook (`use-<name>.ts`) next to the component, and keep `"use client"` on the leaf that renders.
+- **Non-JSX code in a `.tsx` file:** move `cva` variant maps, Zod schemas, types, and pure helpers into a sibling `.ts` file or `src/lib/`.
+- **Long Server Action:** keep it to parse → DAL call → revalidate/redirect. The business logic belongs in the DAL, split into named functions.
 
 ## SEO checklist for any new public page
 

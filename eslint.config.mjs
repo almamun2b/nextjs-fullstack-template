@@ -43,6 +43,32 @@ const eslintConfig = defineConfig([
     files: ["**/*.{js,mjs,cjs}"],
     extends: [tseslint.configs.disableTypeChecked],
   },
+  // Size limits (AGENTS.md › Code size limits). Blank lines and comments
+  // don't count.
+  {
+    files: ["**/*.{ts,tsx,mts,cts,js,mjs,cjs}"],
+    rules: {
+      "max-lines-per-function": [
+        "error",
+        { max: 150, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+  {
+    files: ["**/*.tsx"],
+    rules: {
+      "max-lines": [
+        "error",
+        { max: 200, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+  {
+    // shadcn/ui primitives are generated, and test suites nest whole files
+    // inside describe() callbacks.
+    files: ["src/components/ui/**", "tests/**", "**/*.test.{ts,tsx}"],
+    rules: { "max-lines": "off", "max-lines-per-function": "off" },
+  },
   prettier,
   // Override default ignores of eslint-config-next.
   globalIgnores([
