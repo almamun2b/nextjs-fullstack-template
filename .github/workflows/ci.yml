@@ -17,7 +17,7 @@ env:
 
 jobs:
   quality:
-    name: Typecheck, lint, format
+    name: Typecheck, lint, format, build
     runs-on: ubuntu-latest
     env:
       # `prisma generate` reads the URL from prisma.config.ts but never connects.
@@ -31,9 +31,47 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
+      - run: pnpm exec prisma validate
+      - run: pnpm exec prisma format --check
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm format:check
+      - run: pnpm build
+      - name: Audit dependencies
+        # Report-only until the remaining upstream advisories are fixed.
+        continue-on-error: true
+        run: pnpm audit --audit-level high
+
+  migrations:
+    name: Migrations match schema
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma migrate deploy
+      - name: Fail if the schema changed without a migration
+        run: pnpm exec prisma migrate diff --from-config-datasource --to-schema prisma/schema --exit-code
 
   commitlint:
     name: Commit messages
@@ -48,9 +86,19 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Validate last commit
+      - name: Validate pushed commits
         if: github.event_name == 'push'
-        run: pnpm exec commitlint --last --verbose
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        # A new branch has no "before" commit, and a force push can leave one
+        # that is no longer in history; fall back to the last commit then.
+        run: |
+          if [ "$BEFORE" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            pnpm exec commitlint --from "$BEFORE" --to "$AFTER" --verbose
+          else
+            pnpm exec commitlint --last --verbose
+          fi
       - name: Validate PR commits
         if: github.event_name == 'pull_request'
         run: pnpm exec commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose

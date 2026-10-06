@@ -4,6 +4,8 @@ export default defineComputeConfig({
   app: {
     name: "next-app-prisma",
     framework: "nextjs",
-    env: ".env",
+    // Production values only. Never point this at .env: local commands read
+    // that file, and a prod URL there sends migrations and seeds to prod.
+    env: ".env.compute",
   },
 });

@@ -22,28 +22,37 @@ The code is small: the repo is still essentially the `create-prisma` scaffold pl
 
 ## Summary by priority
 
-| #   | Priority | Area       | Finding                                                                                             | Effort |
-| --- | -------- | ---------- | --------------------------------------------------------------------------------------------------- | ------ |
-| 1   | 🔴 P0    | Build      | No `postcss.config.mjs`, so **both `dev` and `build` are broken** (every page 500s)                 | 2 min  |
-| 2   | 🔴 P0    | CI         | CI never runs `pnpm build`, so it is green while the app cannot build                               | 5 min  |
-| 3   | 🔴 P0    | Docs       | AGENTS.md says "`pnpm dev` still runs". It doesn't, and the stated cause is wrong                   | 2 min  |
-| 4   | 🟠 P1    | Deploy     | `pnpm start` uses `next start` with `output: "standalone"` (Next warns it does not work)            | 10 min |
-| 5   | 🟠 P1    | Deploy     | README tells you to put the **production** `DATABASE_URL` in your local `.env` to deploy            | 15 min |
-| 6   | 🟠 P1    | Runtime    | Prisma client has no dev HMR singleton → connection pool leak on every edit _(tracked)_             | 10 min |
-| 7   | 🟠 P1    | Runtime    | Demo page swallows every DB error, returns 200, and logs nothing                                    | 10 min |
-| 8   | 🟠 P1    | Theme      | `--font-sans` is self-referential → page renders in browser serif _(tracked)_                       | 10 min |
-| 9   | 🟠 P1    | Security   | No security headers; `X-Powered-By: Next.js` is sent _(tracked as planned)_                         | 30 min |
-| 10  | 🟠 P1    | Deps       | 5 audit advisories; unpinned `latest` deps and `dlx …@latest` tools                                 | 20 min |
-| 11  | 🟡 P2    | Data model | `User.email` uniqueness is case-sensitive (`A@x.com` ≠ `a@x.com`)                                   | 20 min |
-| 12  | 🟡 P2    | Runtime    | `dotenv` loaded inside app code: redundant under Next, logs on every load, can mask missing env     | 5 min  |
-| 13  | 🟡 P2    | Tooling    | `@types/node` 26 vs runtime Node 24 (`.nvmrc`) / 22 (`engines`)                                     | 2 min  |
-| 14  | 🟡 P2    | Future bug | `prisma/seed.ts` imports the app client; once it gets `server-only`, the seed will crash            | 10 min |
-| 15  | 🟡 P2    | CI         | Missing checks: `prisma validate`/`format`, migration drift, audit, `next typegen`                  | 30 min |
-| 16  | 🟡 P2    | CI         | commitlint on push only checks the **last** commit                                                  | 5 min  |
-| 17  | 🟡 P2    | Demo page  | "N total" is really "N shown" (`take: 10`); no `select`; dates in server timezone                   | 10 min |
-| 18  | 🟡 P2    | Theme      | Popover tokens unmapped, no radius scale, `dark:` variant misses `<html>` itself _(partly tracked)_ | 15 min |
-| 19  | ⚪ P3    | Docs       | ARCHITECTURE.md §5 JSON-LD line renders "escapes `<` as `<`" (lost `<`)                             | 1 min  |
-| 20  | ⚪ P3    | Misc       | Smaller cleanups (see [§ Low-priority cleanups](#low-priority-cleanups))                            | —      |
+| #   | Priority | Area       | Finding                                                                                             | Effort | Status                                                                                                                                              |
+| --- | -------- | ---------- | --------------------------------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | 🔴 P0    | Build      | No `postcss.config.mjs`, so **both `dev` and `build` are broken** (every page 500s)                 | 2 min  | ✅ Fixed (`postcss.config.mjs`, commit `01e18c5`)                                                                                                   |
+| 2   | 🔴 P0    | CI         | CI never runs `pnpm build`, so it is green while the app cannot build                               | 5 min  | ✅ Fixed: CI runs `pnpm build`                                                                                                                      |
+| 3   | 🔴 P0    | Docs       | AGENTS.md says "`pnpm dev` still runs". It doesn't, and the stated cause is wrong                   | 2 min  | ✅ Fixed (commit `01e18c5`)                                                                                                                         |
+| 4   | 🟠 P1    | Deploy     | `pnpm start` uses `next start` with `output: "standalone"` (Next warns it does not work)            | 10 min | ✅ Fixed: `start` runs `node .next/standalone/server.js`; `build` copies static assets (`scripts/copy-standalone-assets.mjs`)                       |
+| 5   | 🟠 P1    | Deploy     | README tells you to put the **production** `DATABASE_URL` in your local `.env` to deploy            | 15 min | ✅ Fixed: `prisma.compute.ts` reads `.env.compute`; README rewritten                                                                                |
+| 6   | 🟠 P1    | Runtime    | Prisma client has no dev HMR singleton → connection pool leak on every edit _(tracked)_             | 10 min | ✅ Fixed: `src/server/db.ts` singleton (connections stayed flat across 10 HMR reloads)                                                              |
+| 7   | 🟠 P1    | Runtime    | Demo page swallows every DB error, returns 200, and logs nothing                                    | 10 min | ⚠️ Fixed, with a caveat: setup errors show the hint and are logged, and anything else renders `error.tsx`, but still with HTTP 200 (see Fix status) |
+| 8   | 🟠 P1    | Theme      | `--font-sans` is self-referential → page renders in browser serif _(tracked)_                       | 10 min | ✅ Fixed: Geist via `next/font`                                                                                                                     |
+| 9   | 🟠 P1    | Security   | No security headers; `X-Powered-By: Next.js` is sent _(tracked as planned)_                         | 30 min | ⚠️ Partly fixed: static headers and `poweredByHeader: false`. The nonce CSP waits for `proxy.ts`                                                    |
+| 10  | 🟠 P1    | Deps       | 5 audit advisories; unpinned `latest` deps and `dlx …@latest` tools                                 | 20 min | ⚠️ Partly fixed: 5 → 2 advisories (`braces` has no patch yet; `deepmerge-ts` waits on Prisma). Versions pinned                                      |
+| 11  | 🟡 P2    | Data model | `User.email` uniqueness is case-sensitive (`A@x.com` ≠ `a@x.com`)                                   | 20 min | ✅ Fixed: `@db.Citext` (migration `user_email_citext`; verified to return P2002)                                                                    |
+| 12  | 🟡 P2    | Runtime    | `dotenv` loaded inside app code: redundant under Next, logs on every load, can mask missing env     | 5 min  | ✅ Fixed: removed from app code; `quiet: true` elsewhere; now a devDependency                                                                       |
+| 13  | 🟡 P2    | Tooling    | `@types/node` 26 vs runtime Node 24 (`.nvmrc`) / 22 (`engines`)                                     | 2 min  | ✅ Fixed: `@types/node` ^22                                                                                                                         |
+| 14  | 🟡 P2    | Future bug | `prisma/seed.ts` imports the app client; once it gets `server-only`, the seed will crash            | 10 min | ✅ Fixed: the seed builds its own client                                                                                                            |
+| 15  | 🟡 P2    | CI         | Missing checks: `prisma validate`/`format`, migration drift, audit, `next typegen`                  | 30 min | ✅ Fixed: validate/format, `next typegen` in `typecheck`, report-only audit, migration drift job, Dependabot                                        |
+| 16  | 🟡 P2    | CI         | commitlint on push only checks the **last** commit                                                  | 5 min  | ✅ Fixed: checks the whole pushed range                                                                                                             |
+| 17  | 🟡 P2    | Demo page  | "N total" is really "N shown" (`take: 10`); no `select`; dates in server timezone                   | 10 min | ✅ Fixed: "Latest N of M", `select` via the DAL, UTC dates, `createdAt` index                                                                       |
+| 18  | 🟡 P2    | Theme      | Popover tokens unmapped, no radius scale, `dark:` variant misses `<html>` itself _(partly tracked)_ | 15 min | ✅ Fixed: popover mapped, Tailwind's default radius scale (no custom `--radius`), `&:where(.dark, .dark *)`, ThemeProvider                          |
+| 19  | ⚪ P3    | Docs       | ARCHITECTURE.md §5 JSON-LD line renders "escapes `<` as `<`" (the `\u003c` escape was lost)         | 1 min  | ✅ Fixed                                                                                                                                            |
+| 20  | ⚪ P3    | Misc       | Smaller cleanups (see [§ Low-priority cleanups](#low-priority-cleanups))                            | —      | ✅ Fixed or recorded (see Fix status)                                                                                                               |
+
+### Fix status (2026-10-06)
+
+Every finding was worked through. Each row's **Status** column says what changed. Still open:
+
+- **#7, HTTP status for real failures.** `src/app/loading.tsx` wraps the page in a Suspense boundary, so the response streams and the status is committed as 200 before the query fails. `error.tsx` still renders (verified) and the error is logged with a digest, but crawlers and uptime checks see 200. That conflicts with ARCHITECTURE §5 ("`error.tsx` must not mask 5xx as 200") and AGENTS.md ("every async segment gets `loading.tsx`"). Decide which rule wins for this route: drop `loading.tsx` here to get a real 500, or accept 200 and rely on logs plus a `/api/health` check (§12).
+- **#9:** the nonce-based CSP comes with `src/proxy.ts`.
+- **#10:** `braces` (no patched release yet) and `deepmerge-ts` (waits on Prisma). CI audits in report-only mode until they clear.
+- **CI changes** (#2, #15, #16) are syntax-checked locally but only proven once they run on GitHub.
 
 ---
 

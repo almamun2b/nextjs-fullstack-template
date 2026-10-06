@@ -4,3 +4,11 @@ allowBuilds:
   prisma: true
   sharp: true
   unrs-resolver: true
+
+# Patched versions of vulnerable transitive deps (pnpm audit). Drop each entry
+# once the parent package ships the fix itself. deepmerge-ts (via
+# @prisma/config) needs a major bump, so it waits for Prisma. braces has no
+# patched release on npm yet (advisory says >=3.0.4; latest is 3.0.3).
+overrides:
+  source-map-js: ^1.2.2
+  mysql2: ^3.23.1

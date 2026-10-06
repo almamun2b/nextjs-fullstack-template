@@ -7,7 +7,7 @@
     "next-devtools": {
       "type": "stdio",
       "command": "pnpm",
-      "args": ["--silent", "dlx", "next-devtools-mcp@latest"]
+      "args": ["--silent", "dlx", "next-devtools-mcp@0.4.0"]
     }
   }
 }
