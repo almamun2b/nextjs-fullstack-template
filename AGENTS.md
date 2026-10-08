@@ -33,8 +33,8 @@ The package manager is pnpm (v11). Don't use npm or yarn.
 ```bash
 pnpm install                 # then: pnpm db:generate (client is gitignored)
 pnpm dev                     # http://localhost:3000
-pnpm build && pnpm start     # production build (standalone output)
-pnpm typecheck               # tsc --noEmit (strict + noUncheckedIndexedAccess)
+pnpm build && pnpm start     # production build; start runs node .next/standalone/server.js
+pnpm typecheck               # next typegen + tsc --noEmit (strict + noUncheckedIndexedAccess)
 pnpm lint                    # ESLint: next core-web-vitals + typescript-eslint strictTypeChecked
 pnpm lint:fix                # ESLint with --fix
 pnpm format                  # Prettier (+ Tailwind class sorting)
@@ -60,7 +60,7 @@ Husky installs the hooks on `pnpm install` (`prepare` script):
 - `commit-msg` runs commitlint. Commit messages must follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, `ci:`, `build:`, `style:`, `test:`, `perf:`, `revert:`), optionally with a scope (`feat(auth): …`).
 - `pre-push` runs `pnpm typecheck`.
 
-Don't bypass hooks with `--no-verify`. CI (`.github/workflows/ci.yml`) runs the same checks plus commitlint on PR commits.
+Don't bypass hooks with `--no-verify`. CI (`.github/workflows/ci.yml`) runs the same checks plus `prisma validate`/`format --check`, `pnpm build`, a report-only `pnpm audit`, a migrations-vs-schema drift check against a Postgres service, and commitlint on every pushed or PR commit. Dependabot (`.github/dependabot.yml`) opens weekly update PRs.
 
 When pnpm prompts about an install script from a new dependency, add the package to `allowBuilds` in `pnpm-workspace.yaml` instead of disabling the check.
 
@@ -68,10 +68,12 @@ When pnpm prompts about an install script from a new dependency, add the package
 
 - `DATABASE_URL` in `.env` points to a **local PostgreSQL** server on `localhost:5432` (user `postgres`, database `next_app_prisma`, used only by this project). If queries fail with connection errors, check that the Postgres server is running (`pg_isready`) and that the database exists. Other databases on that server belong to other projects; never point `DATABASE_URL` at one of them and migrate.
 - The schema is a folder, so the generator `output` in `prisma/schema/schema.prisma` is relative to `prisma/schema/` (`../../src/generated/prisma`). A wrong path puts the client in `prisma/src/generated` and leaves the app importing a stale one.
-- `src/lib/prisma.ts` **throws at import time** when `DATABASE_URL` is missing. That is why `src/app/page.tsx` dynamic-imports it and sets `force-dynamic`: to keep `next build` from failing without a DB. Keep DB access out of module scope in anything that is statically analysed.
-- The `@/*` path alias maps to the **repo root** (`@/src/lib/prisma`), not `src/`. Retargeting it to `./src/*` is on the roadmap. If you change it, update all imports in the same change.
+- `src/env.ts` **throws at import time** when `DATABASE_URL` is missing, and `src/server/db.ts` (the Prisma singleton) imports it. That is why `src/app/page.tsx` dynamic-imports its DAL module and sets `force-dynamic`: to keep `next build` from failing without a DB. Keep DB access out of module scope in anything that is statically analysed.
+- `prisma/seed.ts` builds its own Prisma client. Scripts run under `tsx` must not import `src/server/*`, because `import "server-only"` throws outside React Server Components.
+- `User.email` is `citext` (case-insensitive), so the `user_email_citext` migration enables the `citext` extension. A hosted database must allow it.
+- The `@/*` path alias maps to the **repo root** (`@/src/server/db`), not `src/`. Retargeting it to `./src/*` is on the roadmap. If you change it, update all imports in the same change.
 - `src/generated/` is gitignored and must never be edited by hand.
-- Tailwind v4 compiles through `postcss.config.mjs` (`@tailwindcss/postcss`). Without that file, Turbopack resolves the `@import`s in `globals.css` itself and fails on `tw-animate-css`, which only exports a `style` condition. `src/app/page.tsx` still uses scaffold classes that `globals.css` no longer defines, so it renders unstyled. See [DESIGN.md › Setup status](DESIGN.md#setup-status).
+- Tailwind v4 compiles through `postcss.config.mjs` (`@tailwindcss/postcss`). Without that file, Turbopack resolves the `@import`s in `globals.css` itself and fails on `tw-animate-css`, which only exports a `style` condition. See [DESIGN.md › Setup status](DESIGN.md#setup-status).
 - `next.config.ts` pins `turbopack.root` and `outputFileTracingRoot` to the project directory, because a stray `pnpm-workspace.yaml` in a parent directory otherwise makes Next.js guess the wrong root. Keep both set to the same path.
 
 ## Architecture rules (non-negotiable)

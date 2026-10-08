@@ -47,3 +47,7 @@ next-env.d.ts
 # mcp / local agent config
 opencode.jsonc
 .claude/settings.local.json
+
+# impeccable local state
+/.impeccable/*.local.json
+/.impeccable/hook.*.json

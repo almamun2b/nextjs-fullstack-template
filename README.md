@@ -24,7 +24,7 @@ pnpm install
 createdb -U postgres next_app_prisma   # a local development database for this project
 cp .env.example .env        # set the user and password in DATABASE_URL
 pnpm db:generate            # generate Prisma client into src/generated/prisma
-pnpm db:migrate             # apply migrations
+pnpm db:migrate             # apply migrations (enables the citext extension)
 pnpm db:seed                # seed demo users
 pnpm dev                    # http://localhost:3000
 ```
@@ -33,17 +33,17 @@ pnpm dev                    # http://localhost:3000
 
 ## Scripts
 
-| Script                         | What it does                                               |
-| ------------------------------ | ---------------------------------------------------------- |
-| `pnpm dev`                     | Dev server (Turbopack)                                     |
-| `pnpm build` / `pnpm start`    | Production build (`output: "standalone"`) and server       |
-| `pnpm typecheck`               | Type-check with `tsc --noEmit`                             |
-| `pnpm lint` / `lint:fix`       | ESLint (Next.js + typescript-eslint strict, type-aware)    |
-| `pnpm format` / `format:check` | Format with Prettier / check formatting (CI)               |
-| `pnpm db:generate`             | Generate the Prisma client (run after every schema change) |
-| `pnpm db:migrate`              | Create and apply a migration in development                |
-| `pnpm db:push`                 | Push the schema without a migration (prototyping only)     |
-| `pnpm db:seed`                 | Run `prisma/seed.ts`                                       |
+| Script                         | What it does                                                                             |
+| ------------------------------ | ---------------------------------------------------------------------------------------- |
+| `pnpm dev`                     | Dev server (Turbopack)                                                                   |
+| `pnpm build` / `pnpm start`    | Standalone production build (static assets copied in) / run `.next/standalone/server.js` |
+| `pnpm typecheck`               | Generate route types (`next typegen`), then `tsc --noEmit`                               |
+| `pnpm lint` / `lint:fix`       | ESLint (Next.js + typescript-eslint strict, type-aware)                                  |
+| `pnpm format` / `format:check` | Format with Prettier / check formatting (CI)                                             |
+| `pnpm db:generate`             | Generate the Prisma client (run after every schema change)                               |
+| `pnpm db:migrate`              | Create and apply a migration in development                                              |
+| `pnpm db:push`                 | Push the schema without a migration (prototyping only)                                   |
+| `pnpm db:seed`                 | Run `prisma/seed.ts`                                                                     |
 
 ## Project layout
 
@@ -54,7 +54,11 @@ prisma/seed.ts        Seed script
 prisma.config.ts      Prisma 7 config (schema path, datasource URL, seed command)
 prisma.compute.ts     Prisma Compute deploy config
 src/app/              Next.js App Router (globals.css holds the Tailwind v4 design tokens)
-src/lib/              Shared helpers (Prisma client currently in src/lib/prisma.ts)
+src/components/       Shared components (ThemeProvider)
+src/env.ts            Zod-validated environment (the only reader of process.env)
+src/server/db.ts      Prisma client singleton (server-only)
+src/server/dal/       Data access layer: every DB read/write
+scripts/              Build helpers
 src/generated/prisma  Generated Prisma client (gitignored)
 ```
 
@@ -66,13 +70,17 @@ See [`.env.example`](.env.example). The full list of planned variables is in [AR
 
 ## Deployment
 
-`pnpm build` produces a standalone Node server in `.next/standalone`. To deploy to Prisma Compute:
+`pnpm build` produces a standalone Node server in `.next/standalone` and copies `.next/static` (and `public/`, if present) into it. `pnpm start` runs that server.
+
+**Prisma Compute:** put the production values (at least `DATABASE_URL` for the hosted database) in `.env.compute`, which is gitignored. `prisma.compute.ts` deploys with that file. Never put production values in `.env`: every local command (`pnpm dev`, `db:migrate`, `db:seed`) reads it. Then run:
 
 ```bash
-pnpm dlx @prisma/cli@latest app deploy
+pnpm dlx @prisma/cli@8.0.0-rc.20 app deploy
 ```
 
-`prisma.compute.ts` deploys with the variables in `.env`, so set `DATABASE_URL` to a hosted production database before deploying; the local database is not reachable from Compute. Or run the standalone build on any Node host. Apply migrations with `pnpm exec prisma migrate deploy` before starting the new version.
+Or run the standalone build on any Node 22.22.1+ host.
+
+**Migrations** are not part of the deploy. Run `pnpm exec prisma migrate deploy` against the production database, from CI or a machine with dev dependencies installed (the `prisma` CLI is not in the standalone output), before starting the new version. The database must allow the `citext` extension.
 
 ## Documentation
 
